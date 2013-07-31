@@ -9,11 +9,12 @@
 #endif
 
 attribute vec4 a_position;
-
-varying vec2 v_texCoords;
+attribute vec4 a_normal;
 
 uniform mat4 u_projView;
+varying vec4 v_normal;
 
 void main() {
+	v_normal = a_normal;
 	gl_Position = u_projView * a_position;
 }

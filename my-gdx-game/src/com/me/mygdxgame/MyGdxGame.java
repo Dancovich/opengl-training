@@ -7,15 +7,12 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.graphics.g3d.Model;
+import com.badlogic.gdx.graphics.g3d.ModelBatch;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
-import com.badlogic.gdx.graphics.g3d.Renderable;
 import com.badlogic.gdx.graphics.g3d.lights.DirectionalLight;
 import com.badlogic.gdx.graphics.g3d.lights.Lights;
 import com.badlogic.gdx.graphics.g3d.lights.PointLight;
 import com.badlogic.gdx.graphics.g3d.loader.ObjLoader;
-import com.badlogic.gdx.graphics.g3d.model.NodePart;
-import com.badlogic.gdx.graphics.g3d.utils.DefaultTextureBinder;
-import com.badlogic.gdx.graphics.g3d.utils.RenderContext;
 
 public class MyGdxGame implements ApplicationListener {
 	
@@ -27,12 +24,11 @@ public class MyGdxGame implements ApplicationListener {
 	
 	private Model model;
 	private ModelInstance modelInstance;
+	private ModelBatch modelBatch;
 	
 	private Lights lights;
 	
-	private RenderContext context;
 	private CustomShader shader;
-	private Renderable renderable;
 	
 	private float angle = 0;
 	
@@ -42,6 +38,8 @@ public class MyGdxGame implements ApplicationListener {
 		
 		assetManager.load(MODEL_PATH, Model.class,new ObjLoader.ObjLoaderParameters(true));
 		assetManager.finishLoading();
+		
+		modelBatch = new ModelBatch();
 		
 		model = assetManager.get(MODEL_PATH);
 		modelInstance = new ModelInstance(model);
@@ -58,21 +56,13 @@ public class MyGdxGame implements ApplicationListener {
 		
 		lights = new Lights(Color.WHITE , pLight, pLight2, dLight);
 		
-		NodePart part = modelInstance.nodes.first().parts.first();
-		renderable = new Renderable();
-		
-		part.setRenderable(renderable);
-		
-		renderable.lights = lights;
-		renderable.worldTransform.idt();
-		
-		context = new RenderContext(new DefaultTextureBinder(DefaultTextureBinder.WEIGHTED,1));
 		shader = new CustomShader();
 		shader.init();
 	}
 
 	@Override
 	public void dispose() {
+		modelBatch.dispose();
 		shader.dispose();
 		assetManager.dispose();
 	}
@@ -82,7 +72,7 @@ public class MyGdxGame implements ApplicationListener {
 		Gdx.graphics.getGL20().glClearColor(0f, 0f, 0f, 1f);
 		Gdx.graphics.getGL20().glClear( GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT );
 		
-		angle += 5 * Gdx.graphics.getDeltaTime();
+		angle += 0.5 * Gdx.graphics.getDeltaTime();
 		if (angle>360f){
 			angle = 0f;
 		}
@@ -93,13 +83,11 @@ public class MyGdxGame implements ApplicationListener {
 		camera.lookAt(0f,0f,0f);
 		camera.update();
 		
-		context.begin();
-		shader.begin(camera, context);
+		modelBatch.begin(camera);
 		
-		shader.render(renderable);
+		modelBatch.render(modelInstance, lights, shader);
 		
-		shader.end();
-		context.end();
+		modelBatch.end();
 	}
 
 	@Override

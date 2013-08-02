@@ -80,12 +80,16 @@ public class MyGdxGame implements ApplicationListener {
 		camera.position.x = (float)(Math.cos(angle) * 5f);
 		camera.position.z = (float)(Math.sin(angle) * 5f);
 		
+		/*camera.position.x = 0f;
+		camera.position.z = -5f;*/
+		
 		camera.lookAt(0f,0f,0f);
 		camera.update();
 		
 		modelBatch.begin(camera);
 		
-		modelBatch.render(modelInstance, lights, shader);
+		//modelBatch.render(modelInstance, lights, shader);
+		modelBatch.render(modelInstance, lights);
 		
 		modelBatch.end();
 	}

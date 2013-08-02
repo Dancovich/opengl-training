@@ -7,6 +7,7 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g3d.Renderable;
 import com.badlogic.gdx.graphics.g3d.Shader;
 import com.badlogic.gdx.graphics.g3d.materials.ColorAttribute;
+import com.badlogic.gdx.graphics.g3d.materials.TextureAttribute;
 import com.badlogic.gdx.graphics.g3d.utils.RenderContext;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.utils.GdxRuntimeException;
@@ -21,11 +22,15 @@ public class CustomShader implements Shader {
 	
 
 
+
+
 	private ShaderProgram program;
 
 	private static final String U_WORLD_TRANSFORM = "u_worldTrans";
 	private static final String U_PROJECTION_MATRIX = "u_projTrans";
 	private static final String U_DIRECTIONAL = "u_directional";
+	private static final String U_CAMERA_POS = "u_cameraPos";
+	private static final String U_TEXTURE = "u_texture";
 	
 	private Camera camera;
 	private RenderContext context;
@@ -38,6 +43,8 @@ public class CustomShader implements Shader {
 	private int diffuseColorLocation;
 	private int specularColorLocation;
 	private int directionalLightLocation;
+	private int cameraPosLocation;
+	private int textureLocation;
 
 	@Override
 	public void dispose() {
@@ -60,7 +67,8 @@ public class CustomShader implements Shader {
 		diffuseColorLocation = program.getUniformLocation(ColorAttribute.DiffuseAlias);
 		specularColorLocation = program.getUniformLocation(ColorAttribute.SpecularAlias);
 		directionalLightLocation = program.getUniformLocation(U_DIRECTIONAL);
-		
+		cameraPosLocation = program.getUniformLocation(U_CAMERA_POS);
+		textureLocation = program.getUniformLocation(U_TEXTURE);
 	}
 
 	@Override
@@ -83,6 +91,9 @@ public class CustomShader implements Shader {
 		
 		//A matriz de projeção não muda durante os passos do render, definimos aqui para evitar repetição
 		program.setUniformMatrix(uProjectionMatrixLocation, this.camera.combined);
+		
+		//Precisamos da posição da câmera para calcular a luz especular
+		program.setUniformf(cameraPosLocation,this.camera.position);
 		
 		//Definimos também algumas propriedades globais do OpenGL
 		this.context.setDepthTest(true, GL20.GL_LEQUAL);
@@ -108,6 +119,20 @@ public class CustomShader implements Shader {
 		if (renderable.lights!=null){
 			program.setUniformf(directionalLightLocation, renderable.lights.directionalLights.first().direction);
 		}
+		
+		//Aplica a textura
+		if (renderable.material.has(TextureAttribute.Diffuse)){
+			TextureAttribute texAttr = (TextureAttribute)renderable.material.get(TextureAttribute.Diffuse);
+			texAttr.textureDescription.texture.bind(0);
+			program.setUniformi(textureLocation, 0);
+		}
+		
+		/*if (diffuseColor.color.a!=1f){
+			this.context.setBlending(true, GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+		}
+		else{
+			this.context.setBlending(false, GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+		}*/
 		
 		//Renderizamos a geometria
 		renderable.mesh.render(program
